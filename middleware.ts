@@ -1,31 +1,23 @@
-// middleware.tsx
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-    // Ambil token dari cookie (Wajib untuk Middleware)
-    const token = request.cookies.get("sanctum-token")?.value;
-    const loginPath = "/login";
-    const dashboardPath = "/dashboard";
+  const token = request.cookies.get("token")?.value;
 
-    // 1. Logika Jika Sudah Login (Token Ada)
-    // Jika token ada DAN user mencoba mengakses halaman login/register:
-    if (token && request.nextUrl.pathname === loginPath) {
-        // Redirect ke dashboard
-        return NextResponse.redirect(new URL(dashboardPath, request.url));
-    }
+  // kalau akses dashboard tapi belum login → redirect ke /login
+  if (!token && request.nextUrl.pathname.startsWith("/dashboard")) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
 
-    // 2. Logika Jika Belum Login (Token Tidak Ada)
-    // Jika user mencoba mengakses halaman dashboard/rute terproteksi, tapi token tidak ada:
-    if (!token && request.nextUrl.pathname.startsWith(dashboardPath)) {
-        // Redirect kembali ke login
-        return NextResponse.redirect(new URL(loginPath, request.url));
-    }
+  // kalau sudah login & akses /login → redirect ke dashboard
+  if (token && request.nextUrl.pathname.startsWith("/login")) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
 
-    return NextResponse.next();
+  return NextResponse.next();
 }
 
+// aktifkan middleware hanya untuk route tertentu
 export const config = {
-    // Terapkan middleware ke semua rute login dan dashboard
-    matcher: ["/login", "/dashboard/:path*"], 
+  matcher: ["/dashboard/:path*", "/login"],
 };

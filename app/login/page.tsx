@@ -1,72 +1,106 @@
-// src/app/login/page.tsx atau pages/login.js
-
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // Tidak digunakan lagi, tapi biar aman biarkan saja
-import api from "@/axios";
-import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 
 export default function LoginPage() {
-  const router = useRouter(); // Masih dipakai di sini, tapi fungsi redirect-nya dihilangkan.
-  const { login } = useAuth();
+  const router = useRouter();
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const res = await api.post("/login", { username, password });
+    try {
+      const endpoint =
+        mode === "login"
+          ? "api/login"
+          : "api/register";
 
-      if (res.data.success) {
-        // Sesuaikan dengan struktur respons Laravel kamu: res.data.data
-        const token = res.data.data.token;
-        const name = res.data.data.name;
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
 
-        // Hanya panggil login, redirect terjadi di AuthContext
-        login(name, token);
-        
-        // 🔥 HAPUS BARIS INI (router.push("/dashboard"))
-      } else {
-        alert("Login gagal");
-      }
-    } catch (err) {
-      alert("Login gagal, cek username & password");
-      console.error("Login error:", err);
-    }
-  };
+      const data = await res.json();
 
-  return (
-    // ... JSX form login
-    <div className="flex min-h-screen items-center justify-center">
-      <form
-        onSubmit={handleSubmit}
-        className="p-6 rounded-lg shadow-md border w-80 space-y-4"
-      >
-        {/* ... input fields ... */}
-        <h1 className="text-xl font-bold text-center">Login</h1>
-        <input
-          type="text"
-          placeholder="Username"
-          className="w-full border rounded p-2"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full border rounded p-2"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white rounded p-2 hover:bg-blue-700"
-        >
-          Login
-        </button>
-      </form>
-    </div>
-  );
+      if (res.ok) {
+        // kalau login / register sukses → simpan token di cookie
+        if (data.data?.token) {
+          Cookies.set("token", data.data.token, { expires: 1 }); // 1 hari
+        }
+        router.push("/dashboard");
+      } else {
+        setError(data.message || "Terjadi kesalahan");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Server error");
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-800">
+      <div className="bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-lg w-full max-w-md">
+        <h1 className="text-3xl font-bold text-center text-white">
+          {mode === "login" ? "Login" : "Register"}
+        </h1>
+
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <input
+            className="w-full p-3 rounded-lg bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <input
+            className="w-full p-3 rounded-lg bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
+          <button
+            type="submit"
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition"
+          >
+            {mode === "login" ? "Login" : "Register"}
+          </button>
+        </form>
+
+        {error && <p className="text-red-400 mt-4 text-center">{error}</p>}
+
+        <p className="text-gray-300 mt-6 text-center">
+          {mode === "login" ? (
+            <>
+              Belum punya akun?{" "}
+              <button
+                onClick={() => setMode("register")}
+                className="text-blue-400 hover:underline"
+              >
+                Register
+              </button>
+            </>
+          ) : (
+            <>
+              Sudah punya akun?{" "}
+              <button
+                onClick={() => setMode("login")}
+                className="text-blue-400 hover:underline"
+              >
+                Login
+              </button>
+            </>
+          )}
+        </p>
+      </div>
+    </div>
+  );
 }
