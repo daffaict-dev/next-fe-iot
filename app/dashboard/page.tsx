@@ -4,33 +4,35 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 
+interface User {
+  id: number;
+  username: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function DashboardPage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const fetchUser = async () => {
+      const token = Cookies.get("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
       try {
-        const token = Cookies.get("token"); // ambil token dari cookie
-        if (!token) {
+        const res = await fetch("/api/user"); // cukup panggil proxy route
+        if (!res.ok) {
           router.push("/login");
           return;
         }
 
-        const res = await fetch("http://127.0.0.1:8000/api/user", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`, // kirim Bearer token
-          },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data.data); // BaseController -> sendResponse pakai "data"
-        } else {
-          router.push("/login");
-        }
+        const data = await res.json();
+        setUser(data.data);
       } catch (err) {
         console.error("Fetch user error:", err);
         router.push("/login");
@@ -42,19 +44,32 @@ export default function DashboardPage() {
     fetchUser();
   }, [router]);
 
-  if (loading) {
-    return (
-      <div className="p-10">
-        <p>Loading...</p>
-      </div>
-    );
-  }
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/logout", { method: "POST" }); // proxy logout
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      Cookies.remove("token");
+      router.push("/login");
+    }
+  };
+
+  if (loading) return <div className="p-10 text-white">Loading...</div>;
 
   return (
-    <div className="p-10">
+    <div className="p-10 text-white">
       <h1 className="text-3xl font-bold">Dashboard</h1>
       {user ? (
-        <p className="mt-4">Welcome back, {user.username} 🎉</p>
+        <>
+          <p className="mt-4">Welcome back, {user.username} 🎉</p>
+          <button
+            onClick={handleLogout}
+            className="mt-6 bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded"
+          >
+            Logout
+          </button>
+        </>
       ) : (
         <p className="mt-4 text-red-400">Gagal memuat data user</p>
       )}
