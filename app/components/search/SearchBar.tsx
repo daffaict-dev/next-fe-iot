@@ -30,9 +30,9 @@ export function SearchBar({ onSearch, placeholder = "Cari komponen..." }: Search
       </div>
       <Button 
         type="submit" 
-        className="bg-blue-600 hover:bg-blue-700 h-11 lg:h-10 px-6 text-base lg:text-sm"
+        className="bg-blue-600 hover:bg-blue-800 h-11 lg:h-10 px-6 text-base lg:text-sm"
       >
-        Cari
+        <h1 className="text-white">Cari</h1>
       </Button>
     </form>
   );

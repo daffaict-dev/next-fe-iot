@@ -17,7 +17,7 @@ import { useState } from "react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Komponen IoT", href: "/dashboard/components", icon: Package },
+  { name: "Komponen", href: "/dashboard/components", icon: Package },
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
   { name: "Users", href: "/dashboard/users", icon: Users },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
@@ -48,19 +48,19 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Overlay */}
       {isMobileOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
+          className="lg:hidden fixed inset-0 z-30"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div className={cn(
-        "pb-12 bg-gray-900 fixed lg:static inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out lg:transform-none",
+        "pb-12 bg-blue-1000 fixed lg:static inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out lg:transform-none",
         isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         "w-64 lg:w-64",
         className
       )}>
-        <div className="space-y-4 py-4 h-full overflow-y-auto">
+        <div className="space-y-4 p-2 m-2 h-90 overflow-y-auto bg-gray-700 rounded-2xl content-center border-1daffasd">
           <div className="px-3 py-2">
             {/* Logo/Title */}
             <div className="flex items-center justify-between px-4 mb-6 mt-4 lg:mt-0">

@@ -14,7 +14,7 @@ import {
 interface User {
   id: number;
   username: string;
-  created_at: string;
+  created_at: string;/*  */
   updated_at: string;
 }
 
@@ -25,32 +25,25 @@ interface HeaderProps {
 
 export function Header({ user, onLogout }: HeaderProps) {
   return (
-    <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-gray-800/40 px-4 lg:px-6">
+    <header className="flex h-18 lg:h-[60px] items-center gap-4 border-b bg-gray-700/40 px-4 lg:px-6">
       {/* Spacer untuk mobile - sejajarkan dengan sidebar toggle */}
       <div className="w-12 lg:hidden" />
       
       <div className="flex-1">
-        <h1 className="text-lg lg:text-xl font-semibold text-white">Dashboard</h1>
+        <h1 className="text-lg lg:text-xl font-semibold text-white bg-gray-700 pl-3 py-1.5 rounded-2xl">Dashboard</h1>
       </div>
       
-      <div className="flex items-center gap-2 lg:gap-4">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-9 w-9 lg:h-10 lg:w-10 text-gray-400 hover:text-white"
-        >
-        </Button>
-        
+      <div className="flex items-center gap-2 lg:gap-4">        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
               variant="ghost" 
-              className="relative h-8 w-8 lg:h-9 lg:w-9 rounded-full"
+              className="relative h-9 w-8 lg:h-9 lg:w-9 rounded-full bg-blue-100"
             >
               <User className="h-4 w-4 lg:h-4 lg:w-4 text-gray-400" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" forceMount>
+          <DropdownMenuContent className="w-56 bg-blue-100" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">{user?.username}</p>
@@ -61,7 +54,7 @@ export function Header({ user, onLogout }: HeaderProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onLogout} className="text-red-600 cursor-pointer">
-              <LogOut className="mr-2 h-4 w-4" />
+              <LogOut className="mr-2 h-4 w-4"/>
               <span>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
