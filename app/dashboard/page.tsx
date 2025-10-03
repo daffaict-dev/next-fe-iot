@@ -150,7 +150,7 @@ export default function DashboardPage() {
       <Sidebar />
       
       <div className="flex-1 flex flex-col">
-        <Header user={user} onLogout={handleLogout} />
+        <Header user={user} onLogout={handleLogout}/>
         
         <main className="flex-1 p-4 lg:p-6 mt-14 lg:mt-0">
           <div className="space-y-4 lg:space-y-6">

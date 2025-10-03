@@ -34,7 +34,7 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <>
       {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
+      <div className="lg:hidden fixed top-8 left-10 z-50">
         <Button
           variant="outline"
           size="icon"
@@ -60,7 +60,7 @@ export function Sidebar({ className }: SidebarProps) {
         "w-64 lg:w-64",
         className
       )}>
-        <div className="space-y-4 p-2 m-2 h-90 overflow-y-auto bg-gray-700 rounded-2xl content-center border-1daffasd">
+        <div className="space-y-4 p-2 mt-7 mx-2 h-150 overflow-y-auto bg-gray-700 rounded-2xl border-1">
           <div className="px-3 py-2">
             {/* Logo/Title */}
             <div className="flex items-center justify-between px-4 mb-6 mt-4 lg:mt-0">

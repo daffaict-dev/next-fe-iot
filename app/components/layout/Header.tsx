@@ -25,9 +25,9 @@ interface HeaderProps {
 
 export function Header({ user, onLogout }: HeaderProps) {
   return (
-    <header className="flex h-18 lg:h-[60px] items-center gap-4 border-b bg-gray-700/40 px-4 lg:px-6">
+    <header className="flex h-18 mt-4 mx-6 lg:h-[70px] rounded-2xl items-center gap-4 border-b bg-gray-700/40 px-4 lg:px-6">
       {/* Spacer untuk mobile - sejajarkan dengan sidebar toggle */}
-      <div className="w-12 lg:hidden" />
+      <div className="w-9 lg:hidden" />
       
       <div className="flex-1">
         <h1 className="text-lg lg:text-xl font-semibold text-white bg-gray-700 pl-3 py-1.5 rounded-2xl">Dashboard</h1>
