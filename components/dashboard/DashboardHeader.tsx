@@ -1,6 +1,6 @@
 "use client";
 
-import { User, LogOut, Bell, Menu } from "lucide-react";
+import { User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,11 +10,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { usePathname } from "next/navigation";
 
 interface User {
   id: number;
   username: string;
-  created_at: string;/*  */
+  created_at: string;
   updated_at: string;
 }
 
@@ -23,14 +24,30 @@ interface HeaderProps {
   onLogout: () => void;
 }
 
-export function Header({ user, onLogout }: HeaderProps) {
+// Mapping path ke title
+const pageTitles: { [key: string]: string } = {
+  "/dashboard": "Dashboard",
+  "/dashboard/components": "Komponen",
+  "/dashboard/analytics": "Analytics",
+  "/dashboard/users": "Users",
+  "/dashboard/settings": "Settings",
+};
+
+export function DashboardHeader({ user, onLogout }: HeaderProps) {
+  const pathname = usePathname();
+  
+  // Dapatkan title berdasarkan pathname, default ke "Dashboard"
+  const currentTitle = pageTitles[pathname] || "Dashboard";
+
   return (
     <header className="flex h-18 mt-4 mx-6 lg:h-[70px] rounded-2xl items-center gap-4 border-b bg-gray-700/40 px-4 lg:px-6">
       {/* Spacer untuk mobile - sejajarkan dengan sidebar toggle */}
       <div className="w-9 lg:hidden" />
       
       <div className="flex-1">
-        <h1 className="text-lg lg:text-xl font-semibold text-white bg-gray-700 pl-3 py-1.5 rounded-2xl">Dashboard</h1>
+        <h1 className="text-lg lg:text-xl font-semibold text-white bg-gray-700 pl-3 py-1.5 rounded-2xl">
+          {currentTitle}
+        </h1>
       </div>
       
       <div className="flex items-center gap-2 lg:gap-4">        

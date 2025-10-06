@@ -34,7 +34,7 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <>
       {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-8 left-10 z-50">
+      <div className="lg:hidden fixed top-4 left-4 z-50">
         <Button
           variant="outline"
           size="icon"
@@ -48,28 +48,28 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Overlay */}
       {isMobileOpen && (
         <div 
-          className="lg:hidden fixed inset-0 z-30"
+          className="lg:hidden fixed inset-0 bg-black/50 z-30"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div className={cn(
-        "pb-12 bg-blue-1000 fixed lg:static inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out lg:transform-none",
+        "fixed lg:static inset-y-0 left-0 z-40 w-64 bg-gray-800 border-r border-gray-700 transform transition-transform duration-300 ease-in-out lg:transform-none",
         isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-        "w-64 lg:w-64",
         className
       )}>
-        <div className="space-y-4 p-2 mt-7 mx-2 h-150 overflow-y-auto bg-gray-700 rounded-2xl border-1">
-          <div className="px-3 py-2">
-            {/* Logo/Title */}
-            <div className="flex items-center justify-between px-4 mb-6 mt-4 lg:mt-0">
-              <h2 className="text-lg font-semibold text-white">
-                IoT Inventory
-              </h2>
-            </div>
-            
-            <div className="space-y-1">
+        <div className="flex flex-col h-full">
+          {/* Logo/Title */}
+          <div className="flex items-center justify-center px-4 py-6 border-b border-gray-700">
+            <h2 className="text-xl font-bold text-white">
+              IoT Inventory
+            </h2>
+          </div>
+          
+          {/* Navigation */}
+          <div className="flex-1 px-3 py-4">
+            <nav className="space-y-2">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
@@ -82,8 +82,8 @@ export function Sidebar({ className }: SidebarProps) {
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-all hover:text-white",
                       isActive
-                        ? "bg-gray-800 text-white"
-                        : "text-gray-400 hover:bg-gray-800"
+                        ? "bg-blue-600 text-white shadow-lg"
+                        : "text-gray-400 hover:bg-gray-700"
                     )}
                   >
                     <Icon className="h-5 w-5" />
@@ -91,7 +91,7 @@ export function Sidebar({ className }: SidebarProps) {
                   </Link>
                 );
               })}
-            </div>
+            </nav>
           </div>
         </div>
       </div>

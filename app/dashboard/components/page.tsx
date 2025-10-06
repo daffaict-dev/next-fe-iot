@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +11,6 @@ import {
   Search,
   Package,
   X,
-  ArrowLeft,
   Upload,
   Image as ImageIcon
 } from "lucide-react";
@@ -33,7 +31,7 @@ export interface Product {
   updated_at: string;
 }
 
-// Fungsi untuk kompres gambar dengan quality yang lebih rendah
+// Fungsi untuk kompres gambar
 const compressImage = (file: File, maxWidth: number = 400, maxHeight: number = 400, quality: number = 0.5): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -44,7 +42,6 @@ const compressImage = (file: File, maxWidth: number = 400, maxHeight: number = 4
         let width = img.width;
         let height = img.height;
 
-        // Calculate new dimensions untuk memperkecil ukuran
         if (width > height) {
           if (width > maxWidth) {
             height = Math.round((height * maxWidth) / width);
@@ -66,13 +63,10 @@ const compressImage = (file: File, maxWidth: number = 400, maxHeight: number = 4
           return;
         }
 
-        // Set background putih untuk gambar transparan
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, width, height);
-        
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Convert ke JPEG dengan quality rendah untuk mengurangi ukuran
         const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
         resolve(compressedDataUrl);
       };
@@ -85,7 +79,6 @@ const compressImage = (file: File, maxWidth: number = 400, maxHeight: number = 4
 };
 
 export default function ComponentsPage() {
-  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -114,7 +107,7 @@ export default function ComponentsPage() {
     return Cookies.get("token");
   };
 
-  // Fetch products dengan token
+  // Fetch products
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -139,22 +132,18 @@ export default function ComponentsPage() {
         if (productsRes.status === 401) {
           setError("Token tidak valid, silakan login kembali");
         } else {
-          const errorText = await productsRes.text();
-          console.error('Error response:', errorText);
           throw new Error(`HTTP error! status: ${productsRes.status}`);
         }
         return;
       }
       
       const productsData = await productsRes.json();
-      
       const productsArray = productsData.data || productsData.products || productsData;
       
       if (Array.isArray(productsArray)) {
         setProducts(productsArray);
         setFilteredProducts(productsArray);
       } else {
-        console.warn('Expected array but got:', typeof productsArray);
         setProducts([]);
         setFilteredProducts([]);
       }
@@ -191,7 +180,7 @@ export default function ComponentsPage() {
     setFilteredProducts(filtered);
   };
 
-  // Handle upload gambar - DENGAN KOMPRESI AGAR UKURAN KECIL
+  // Handle upload gambar
   const handleUploadClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
@@ -205,36 +194,18 @@ export default function ComponentsPage() {
     try {
       setUploading(true);
       
-      // Validasi ukuran file sebelum kompresi (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError("Ukuran file maksimal 5MB");
         return;
       }
 
-      // Validasi tipe file
       if (!file.type.startsWith('image/')) {
         setError("File harus berupa gambar (JPG, PNG, GIF)");
         return;
       }
 
-      // console.log('Original file size:', (file.size / 1024).toFixed(2), 'KB');
-
-      // Kompres gambar dengan setting yang lebih agresif
       const compressedImage = await compressImage(file, 400, 400, 0.5);
       
-      // Hitung ukuran setelah kompresi
-      const base64Length = compressedImage.length - (compressedImage.indexOf(',') + 1);
-      const fileSizeInKB = (base64Length * 0.75) / 1024; // Approximate size in KB
-      
-      console.log('Compressed file size:', fileSizeInKB.toFixed(2), 'KB');
-      console.log('Compression ratio:', ((file.size - (fileSizeInKB * 1024)) / file.size * 100).toFixed(2), '%');
-
-      // Validasi ukuran setelah kompresi (max 500KB)
-      if (fileSizeInKB > 500) {
-        setError("Gambar masih terlalu besar setelah kompresi. Coba gambar dengan resolusi lebih rendah.");
-        return;
-      }
-
       setFormData(prev => ({
         ...prev,
         gambar: compressedImage
@@ -274,7 +245,7 @@ export default function ComponentsPage() {
     setUploading(false);
   };
 
-  // Handle form submit dengan token
+  // Handle form submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -285,7 +256,6 @@ export default function ComponentsPage() {
         return;
       }
 
-      // Prepare data untuk dikirim
       const submitData = {
         kode_barang: formData.kode_barang,
         nama_komponen: formData.nama_komponen,
@@ -296,8 +266,6 @@ export default function ComponentsPage() {
         stok_max: formData.stok_max === "" ? 0 : parseInt(formData.stok_max as string) || 0,
         gambar: formData.gambar,
       };
-
-      // console.log('Submitting data. Image size:', formData.gambar ? formData.gambar.length : 0, 'characters');
 
       const url = editingProduct 
         ? `/api/products/${editingProduct.id}`
@@ -310,43 +278,21 @@ export default function ComponentsPage() {
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
-          "Accept": "application/json",
-          "X-Requested-With": "XMLHttpRequest"
         },
         body: JSON.stringify(submitData),
       });
 
       if (response.ok) {
-        const result = await response.json();
-        // console.log('Success:', result);
         resetForm();
         fetchProducts();
         return;
       }
 
-      // Handle error responses
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || errorData.error || `HTTP error! status: ${response.status}`);
-      } else {
-        const errorText = await response.text();
-        console.error('Non-JSON error response:', errorText);
-        
-        if (response.status === 500) {
-          throw new Error("Internal Server Error - Silakan coba lagi atau hubungi administrator");
-        } else if (response.status === 422) {
-          throw new Error("Data tidak valid. Periksa kembali input Anda.");
-        } else if (response.status === 413) {
-          throw new Error("Data terlalu besar. Coba gambar dengan ukuran lebih kecil.");
-        } else {
-          throw new Error(`Server error: ${response.status} - ${response.statusText}`);
-        }
-      }
+      throw new Error(`HTTP error! status: ${response.status}`);
 
     } catch (error) {
       console.error("Error submitting form:", error);
-      setError(error instanceof Error ? error.message : "Terjadi kesalahan saat menyimpan");
+      setError("Terjadi kesalahan saat menyimpan");
     }
   };
 
@@ -367,7 +313,7 @@ export default function ComponentsPage() {
     setError(null);
   };
 
-  // Handle delete dengan token
+  // Handle delete
   const handleDelete = async (id: number) => {
     if (!confirm("Apakah Anda yakin ingin menghapus komponen ini?")) return;
 
@@ -382,9 +328,6 @@ export default function ComponentsPage() {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "X-Requested-With": "XMLHttpRequest"
         },
       });
 
@@ -393,23 +336,15 @@ export default function ComponentsPage() {
         return;
       }
 
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || errorData.error || "Gagal menghapus komponen");
-      } else {
-        const errorText = await response.text();
-        console.error('Non-JSON error response:', errorText);
-        throw new Error(`Server error: ${response.status}`);
-      }
+      throw new Error(`HTTP error! status: ${response.status}`);
 
     } catch (error) {
       console.error("Error:", error);
-      setError(error instanceof Error ? error.message : "Terjadi kesalahan saat menghapus");
+      setError("Terjadi kesalahan saat menghapus");
     }
   };
 
-  // Format date dari database
+  // Format date
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString.replace(' ', 'T'));
@@ -432,199 +367,192 @@ export default function ComponentsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center bg-gray-900">
         <div className="text-white text-lg">Memuat data komponen...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto space-y-4 lg:space-y-6">
-        {/* Header dengan Back Button */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 lg:gap-4">
-          <div className="flex items-center gap-3 lg:gap-4">
-            <Button
-              variant="outline"
-              onClick={() => router.back()}
-              className="flex items-center gap-2 border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white h-10 px-3 lg:px-4"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Kembali</span>
-            </Button>
+    <div className="flex-1">
+      {/* Main Content */}
+      <main className="p-4 lg:p-6">
+        <div className="max-w-7xl mx-auto space-y-4 lg:space-y-6">
+          {/* Action Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 lg:gap-4">
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-white">Manajemen Komponen</h1>
               <p className="text-gray-400 mt-1 text-sm lg:text-base">Kelola komponen inventory IoT</p>
             </div>
-          </div>
-          <Button 
-            onClick={() => setShowForm(true)} 
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto h-10 px-4 justify-center mt-4 sm:mt-0"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Tambah Komponen</span>
-          </Button>
-        </div>
-
-        {/* Error Alert */}
-        {error && (
-          <div className="bg-red-900/50 border border-red-700 rounded-lg p-3 lg:p-4">
-            <p className="text-red-200 text-sm lg:text-base">{error}</p>
             <Button 
-              onClick={() => setError(null)} 
-              variant="ghost" 
-              size="sm" 
-              className="mt-2 text-red-300 hover:text-red-100 hover:bg-red-800"
+              onClick={() => setShowForm(true)} 
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto h-10 px-4 justify-center"
             >
-              Tutup
+              <Plus className="h-4 w-4" />
+              <span>Tambah Komponen</span>
             </Button>
           </div>
-        )}
 
-        {/* Search Bar */}
-        <Card className="bg-gray-800 border-gray-700">
-          <CardContent className="p-3 lg:p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                type="text"
-                placeholder="Cari komponen berdasarkan nama, kode, atau lokasi..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 h-11 lg:h-10 text-base lg:text-sm"
-              />
+          {/* Error Alert */}
+          {error && (
+            <div className="bg-red-900/50 border border-red-700 rounded-lg p-3 lg:p-4">
+              <p className="text-red-200 text-sm lg:text-base">{error}</p>
+              <Button 
+                onClick={() => setError(null)} 
+                variant="ghost" 
+                size="sm" 
+                className="mt-2 text-red-300 hover:text-red-100 hover:bg-red-800"
+              >
+                Tutup
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          )}
 
-        {/* Products List */}
-        <Card className="bg-gray-800 border-gray-700">
-          <CardHeader className="px-4 lg:px-6">
-            <CardTitle className="text-white flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-              <span className="text-lg lg:text-xl">Daftar Komponen IoT</span>
-              <span className="text-sm font-normal text-gray-400">
-                {filteredProducts.length} item ditemukan
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 px-4 lg:px-6 pb-4 lg:pb-6">
-            <div className="grid gap-4">
-              {currentProducts.length === 0 ? (
-                <div className="text-center py-8">
-                  <Package className="h-16 w-16 text-gray-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-white mb-2">
-                    {searchTerm ? "Tidak ada komponen yang ditemukan" : "Tidak ada komponen"}
-                  </h3>
-                  <p className="text-gray-400 mb-4 text-sm lg:text-base">
-                    {searchTerm 
-                      ? "Coba ubah kata kunci pencarian Anda" 
-                      : "Mulai dengan menambahkan komponen pertama Anda"
-                    }
-                  </p>
-                  {!searchTerm && (
-                    <Button 
-                      onClick={() => setShowForm(true)} 
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Tambah Komponen Pertama
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                currentProducts.map((product) => (
-                  <Card key={product.id} className="bg-gray-750 border-gray-600 hover:border-blue-500/50 transition-all duration-300">
-                    <CardContent className="p-4 lg:p-6">
-                      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-                        {/* Gambar Komponen */}
-                        <div className="flex-shrink-0 flex justify-center lg:justify-start">
-                          {product.gambar ? (
-                            <img 
-                              src={product.gambar} 
-                              alt={product.nama_komponen}
-                              className="w-20 h-20 lg:w-24 lg:h-24 object-cover rounded-lg border border-gray-600"
-                            />
-                          ) : (
-                            <div className="w-20 h-20 lg:w-24 lg:h-24 bg-gray-700 rounded-lg border border-gray-600 flex items-center justify-center">
-                              <ImageIcon className="h-6 w-6 lg:h-8 lg:w-8 text-gray-500" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Info Komponen */}
-                        <div className="flex-1 space-y-2 lg:space-y-3 min-w-0">
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                            <h3 className="font-semibold text-lg lg:text-xl text-white truncate">{product.nama_komponen}</h3>
-                            <span className="text-sm bg-blue-500/20 text-blue-300 px-2 lg:px-3 py-1 rounded-full border border-blue-500/30 whitespace-nowrap">
-                              {product.kode_barang}
-                            </span>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 text-sm">
-                            <div className="flex items-center gap-2 text-gray-300">
-                              <span className="font-medium text-white">Jumlah:</span>
-                              <span>{product.jumlah} {product.satuan}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-300">
-                              <span className="font-medium text-white">Lokasi:</span>
-                              <span className="truncate">{product.lokasi_simpan}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-300">
-                              <span className="font-medium text-white">Stok Min:</span>
-                              <span className={product.jumlah <= product.stok_min ? "text-red-400" : "text-green-400"}>
-                                {product.stok_min}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-300">
-                              <span className="font-medium text-white">Stok Max:</span>
-                              <span>{product.stok_max}</span>
-                            </div>
-                          </div>
-
-                          <div className="text-xs text-gray-500">
-                            Terakhir update: {formatDate(product.updated_at)}
-                          </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-2 justify-end lg:justify-start">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(product)}
-                            className="border-blue-500 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 h-9 lg:h-10"
-                          >
-                            <Edit className="h-3 w-3 lg:h-4 lg:w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(product.id)}
-                            className="border-red-500 text-red-400 hover:bg-red-500/20 hover:text-red-300 h-9 lg:h-10"
-                          >
-                            <Trash2 className="h-3 w-3 lg:h-4 lg:w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-4 lg:mt-6">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
+          {/* Search Bar */}
+          <Card className="bg-gray-800 border-gray-700">
+            <CardContent className="p-3 lg:p-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  type="text"
+                  placeholder="Cari komponen berdasarkan nama, kode, atau lokasi..."
+                  value={searchTerm}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 h-11 lg:h-10"
                 />
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+
+          {/* Products List */}
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader className="px-4 lg:px-6">
+              <CardTitle className="text-white flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                <span className="text-lg lg:text-xl">Daftar Komponen IoT</span>
+                <span className="text-sm font-normal text-gray-400">
+                  {filteredProducts.length} item ditemukan
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 px-4 lg:px-6 pb-4 lg:pb-6">
+              <div className="grid gap-4">
+                {currentProducts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="h-16 w-16 text-gray-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-white mb-2">
+                      {searchTerm ? "Tidak ada komponen yang ditemukan" : "Tidak ada komponen"}
+                    </h3>
+                    <p className="text-gray-400 mb-4">
+                      {searchTerm 
+                        ? "Coba ubah kata kunci pencarian Anda" 
+                        : "Mulai dengan menambahkan komponen pertama Anda"
+                      }
+                    </p>
+                    {!searchTerm && (
+                      <Button 
+                        onClick={() => setShowForm(true)} 
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Tambah Komponen Pertama
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  currentProducts.map((product) => (
+                    <Card key={product.id} className="bg-gray-750 border-gray-600 hover:border-blue-500/50 transition-all duration-300">
+                      <CardContent className="p-4 lg:p-6">
+                        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+                          {/* Gambar Komponen */}
+                          <div className="flex-shrink-0 flex justify-center lg:justify-start">
+                            {product.gambar ? (
+                              <img 
+                                src={product.gambar} 
+                                alt={product.nama_komponen}
+                                className="w-20 h-20 lg:w-24 lg:h-24 object-cover rounded-lg border border-gray-600"
+                              />
+                            ) : (
+                              <div className="w-20 h-20 lg:w-24 lg:h-24 bg-gray-700 rounded-lg border border-gray-600 flex items-center justify-center">
+                                <ImageIcon className="h-6 w-6 lg:h-8 lg:w-8 text-gray-500" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Info Komponen */}
+                          <div className="flex-1 space-y-2 lg:space-y-3 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                              <h3 className="font-semibold text-lg lg:text-xl text-white truncate">{product.nama_komponen}</h3>
+                              <span className="text-sm bg-blue-500/20 text-blue-300 px-2 lg:px-3 py-1 rounded-full border border-blue-500/30 whitespace-nowrap">
+                                {product.kode_barang}
+                              </span>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 text-sm">
+                              <div className="flex items-center gap-2 text-gray-300">
+                                <span className="font-medium text-white">Jumlah:</span>
+                                <span>{product.jumlah} {product.satuan}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-gray-300">
+                                <span className="font-medium text-white">Lokasi:</span>
+                                <span className="truncate">{product.lokasi_simpan}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-gray-300">
+                                <span className="font-medium text-white">Stok Min:</span>
+                                <span className={product.jumlah <= product.stok_min ? "text-red-400" : "text-green-400"}>
+                                  {product.stok_min}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-gray-300">
+                                <span className="font-medium text-white">Stok Max:</span>
+                                <span>{product.stok_max}</span>
+                              </div>
+                            </div>
+
+                            <div className="text-xs text-gray-500">
+                              Terakhir update: {formatDate(product.updated_at)}
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex gap-2 justify-end lg:justify-start">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(product)}
+                              className="border-blue-500 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 h-9 lg:h-10"
+                            >
+                              <Edit className="h-3 w-3 lg:h-4 lg:w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDelete(product.id)}
+                              className="border-red-500 text-red-400 hover:bg-red-500/20 hover:text-red-300 h-9 lg:h-10"
+                            >
+                              <Trash2 className="h-3 w-3 lg:h-4 lg:w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-4 lg:mt-6">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </main>
 
       {/* Form Modal */}
       {showForm && (
@@ -646,7 +574,7 @@ export default function ComponentsPage() {
             </CardHeader>
             <CardContent className="p-4 lg:p-6">
               <form onSubmit={handleSubmit} className="space-y-4 lg:space-y-6">
-                {/* Upload Gambar - DENGAN KOMPRESI AGAR UKURAN KECIL */}
+                {/* Upload Gambar */}
                 <div className="space-y-3">
                   <label className="text-sm font-medium text-white">Gambar Komponen</label>
                   <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -681,7 +609,6 @@ export default function ComponentsPage() {
                     <div className="flex flex-col gap-2">
                       <input
                         type="file"
-                        id="gambar"
                         ref={fileInputRef}
                         accept="image/*"
                         onChange={handleImageUpload}
@@ -706,6 +633,7 @@ export default function ComponentsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+                  {/* Form fields */}
                   <div className="space-y-3">
                     <label className="text-sm font-medium text-white">Kode Barang *</label>
                     <Input
