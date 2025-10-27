@@ -3,6 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, AlertTriangle, CheckCircle, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import Cookies from "js-cookie";
 
 interface Product {
   id: number;
@@ -14,12 +16,58 @@ interface Product {
 }
 
 interface DashboardStatsProps {
-  products: Product[];
+  // Hapus props products karena akan fetch sendiri
 }
 
-export function DashboardStats({ products }: DashboardStatsProps) {
+export function DashboardStats({}: DashboardStatsProps) {
   const router = useRouter();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   
+  // Get token dari cookies
+  const getToken = () => {
+    return Cookies.get("token");
+  };
+
+  // Fetch products dari API
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const token = getToken();
+      if (!token) {
+        console.error("Token tidak ditemukan");
+        return;
+      }
+      
+      const productsRes = await fetch("/api/products", {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (productsRes.ok) {
+        const productsData = await productsRes.json();
+        const productsArray = productsData.data || productsData.products || productsData;
+        
+        if (Array.isArray(productsArray)) {
+          setProducts(productsArray);
+        } else {
+          setProducts([]);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
   // Hitung statistik
   const lowStockProducts = products.filter(p => p.jumlah <= p.stok_min);
   const overstockProducts = products.filter(p => p.jumlah > p.stok_max);
@@ -30,24 +78,39 @@ export function DashboardStats({ products }: DashboardStatsProps) {
   const adequateStockCount = adequateStockProducts.length;
   const totalProducts = products.length;
 
-  // Handler untuk navigasi
+  // Handler untuk navigasi - TIDAK PERLU sessionStorage lagi
   const handleTotalComponentsClick = () => {
     router.push('/dashboard/components');     
   };  
 
   const handleLowStockClick = () => {
-    // Simpan data low stock products ke sessionStorage untuk digunakan di analytics
-    sessionStorage.setItem('lowStockProducts', JSON.stringify(lowStockProducts));
-    sessionStorage.setItem('activeSection', 'low-stock');
-    router.push('/dashboard/analytics');
+    // Langsung navigasi tanpa simpan ke sessionStorage
+    router.push('/dashboard/analytics?section=low-stock');
   };
 
   const handleOverstockClick = () => {
-    // Simpan data overstock products ke sessionStorage untuk digunakan di analytics
-    sessionStorage.setItem('overstockProducts', JSON.stringify(overstockProducts));
-    sessionStorage.setItem('activeSection', 'overstock');
-    router.push('/dashboard/analytics');
+    // Langsung navigasi tanpa simpan ke sessionStorage
+    router.push('/dashboard/analytics?section=overstock');
   };
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+        {/* Loading skeleton */}
+        {[1, 2, 3].map((item) => (
+          <Card key={item} className="bg-gray-800 border-gray-700">
+            <CardContent className="p-6">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-700 rounded w-1/2 mb-2"></div>
+                <div className="h-8 bg-gray-700 rounded w-1/3 mb-2"></div>
+                <div className="h-3 bg-gray-700 rounded w-3/4"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">

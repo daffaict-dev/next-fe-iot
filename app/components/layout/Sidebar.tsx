@@ -7,7 +7,7 @@ import {
   Package, 
   Settings, 
   BarChart3,
-  Users,
+  Component,
   Menu,
   X
 } from "lucide-react";
@@ -19,9 +19,10 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Komponen", href: "/dashboard/components", icon: Package },
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
-  { name: "Users", href: "/dashboard/users", icon: Users },
+  { name: "Bon Komponen", href: "/dashboard/bon-components", icon: Component },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
+
 
 interface SidebarProps {
   className?: string;
