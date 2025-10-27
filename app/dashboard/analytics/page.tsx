@@ -10,8 +10,7 @@ import {
   AlertTriangle, 
   TrendingUp, 
   Edit,
-  Download,
-  Plus
+  Download
 } from "lucide-react";
 
 interface Product {
